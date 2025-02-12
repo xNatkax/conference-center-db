@@ -1,3 +1,5 @@
+-- Fill database with sample entries
+
 USE ConferenceCenterDB;
 GO
 
@@ -1148,8 +1150,8 @@ VALUES
 ('2025-01-14 12:31:33', 'New');
 
 
--- Table Orders.OrderDetails
-INSERT INTO Orders.OrderDetails (OrderID, MaterialID, Quantity) 
+-- Table Orders.OrdersDetails
+INSERT INTO Orders.OrdersDetails (OrderID, MaterialID, Quantity) 
 VALUES
     -- Order 1:
     (1, 6, 5),
