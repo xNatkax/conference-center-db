@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    build: .
+    container_name: sqlserver-fulltext
+    platform: linux/amd64
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Natalia25
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    restart: always
+
+volumes:
+  sqlserver-data:
+    driver: local
+
