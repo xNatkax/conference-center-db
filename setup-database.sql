@@ -34,8 +34,8 @@ CREATE TABLE Reservations.Services (
     ServiceType VARCHAR(50) NOT NULL,
     ServiceName VARCHAR(50) NOT NULL,
     RoomCapacity INT,
-    Equipment NVARCHAR(MAX),    -- Full-text indeks
-    Description NVARCHAR(MAX),  -- Full-text indeks
+    Equipment NVARCHAR(MAX),
+    Description NVARCHAR(MAX),
     Price DECIMAL(10, 2) NOT NULL
 ) AS NODE;
 
@@ -50,12 +50,10 @@ CREATE TABLE Reservations.Reservations (
 
 -- EDGE: booked, includes
 CREATE TABLE Reservations.booked (
-    ID INT IDENTITY(1, 1) PRIMARY KEY,
     EventDate DATETIME NOT NULL
 ) AS EDGE;
 
 CREATE TABLE Reservations.includes (
-    ID INT IDENTITY(1, 1) PRIMARY KEY,
     Quantity INT NOT NULL
 ) AS EDGE;
 
@@ -83,7 +81,7 @@ CREATE TABLE Feedback.Reviews (
     CustomerID INT NOT NULL,
     EventID INT NOT NULL,
     Review INT CHECK (Review BETWEEN 1 AND 5),
-    Comment NVARCHAR(MAX),  -- Full-text indeks
+    Comment NVARCHAR(MAX),
     CONSTRAINT FK_Reviews_Customers FOREIGN KEY (CustomerID) REFERENCES Reservations.Customers(CustomerID),
     CONSTRAINT FK_Reviews_CompletedEvents FOREIGN KEY (EventID) REFERENCES Events.CompletedEvents(EventID)
 );
