@@ -7,11 +7,12 @@ services:
     platform: linux/amd64
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=Natalia25
+      - MSSQL_SA_PASSWORD=Pa$$w0rd
     ports:
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+      - /Users/natka/Documents/BAK:/var/opt/mssql/backup
     restart: always
 
 volumes:
