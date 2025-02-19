@@ -16,8 +16,6 @@ CREATE SCHEMA Inventory;        -- includes table: Inventory
 GO
 CREATE SCHEMA Orders;           -- includes tables: Orders, OrdersDetails
 GO
-CREATE SCHEMA Maintenance;      -- includes table: ChangeTracking
-GO
 
 -- Create tables
 -- graph database part (with document elements)
@@ -110,13 +108,4 @@ CREATE TABLE Orders.OrdersDetails(
     Quantity INT NOT NULL,
     CONSTRAINT FK_OrderDetails_Orders FOREIGN KEY (OrderID) REFERENCES Orders.Orders(OrderID),
     CONSTRAINT FK_OrderDetails_Inventory FOREIGN KEY (MaterialID) REFERENCES Inventory.Inventory(MaterialID)
-);
-
-
--- table for monitoring changes in the database tables; for log backup automation
-CREATE TABLE Maintenance.ChangeTracking (       
-    SchemaName NVARCHAR(128),
-    TableName NVARCHAR(128),
-    ChangeType NVARCHAR(50),
-    ChangeTime DATETIME DEFAULT GETDATE()
 );
