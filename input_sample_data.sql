@@ -1,4 +1,4 @@
--- Fill database with sample entries
+-- fill database with sample entries
 
 USE ConferenceCenterDB;
 GO
