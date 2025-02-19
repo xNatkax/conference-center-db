@@ -1,10 +1,11 @@
--- Security management - permissions
-
--- seller: Jan Kowalski - assigned login: jankowal
--- supplier: Anna Nowak - assigned login: annnowak
--- contractor: Michał Wiśniewski - assigned login: micwisni
--- socialmediaspecialist: Katarzyna Dąbrowska - assigned login: katdabro
--- manager (db_datareader): Tomasz Lewandowski - assigned login: tomlewan
+/*
+Security management - permissions
+    seller: Jan Kowalski - assigned login: jankowal
+    supplier: Anna Nowak - assigned login: annnowak
+    contractor: Michał Wiśniewski - assigned login: micwisni
+    socialmediaspecialist: Katarzyna Dąbrowska - assigned login: katdabro
+    manager (db_datareader): Tomasz Lewandowski - assigned login: tomlewan
+*/
 
 USE ConferenceCenterDB;
 GO
@@ -95,7 +96,9 @@ GRANT SELECT, UPDATE ON SCHEMA::Orders TO contractor;
 GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::Feedback TO socialmediaspecialist;
 
 
--- tests
+------------------------------------------------------------------------------------
+--                                Tests                                           --
+------------------------------------------------------------------------------------
 -- impersonation
 SELECT SUSER_NAME();
 
@@ -174,3 +177,7 @@ EXECUTE AS USER = 'tomlewan';
 SELECT USER_NAME(), SUSER_SNAME();
 SELECT * FROM sys.tables;
 REVERT;
+
+------------------------------------------------------------------------------------
+--                                                                                --
+------------------------------------------------------------------------------------
