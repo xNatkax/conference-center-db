@@ -1,11 +1,11 @@
--- Crate indexes for tables
+-- create indexes for tables
 
 USE ConferenceCenterDB;
 GO
 
 SET STATISTICS IO ON;
 
--- Stoplist
+-- stoplist
 CREATE FULLTEXT STOPLIST SQLStopList;
 GO
 ALTER FULLTEXT STOPLIST SQLStopList
