@@ -174,6 +174,3 @@ EXECUTE AS USER = 'tomlewan';
 SELECT USER_NAME(), SUSER_SNAME();
 SELECT * FROM sys.tables;
 REVERT;
-
-
--- audits
