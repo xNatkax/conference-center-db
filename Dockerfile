@@ -5,7 +5,7 @@ USER root
 
 # Install dependencies - these are required to make changes to apt-get below
 RUN apt-get update && \
-    apt-get install -yq gnupg gnupg2 gnupg1 curl apt-transport-https && \
+    apt-get install -yq gnupg gnupg2 gnupg1 curl apt-transport-https cron && \
 # Install SQL Server package links - why aren't these already embedded in the image?  How weird.
     curl https://packages.microsoft.com/keys/microsoft.asc -o /var/opt/mssql/ms-key.cer && \
     apt-key add /var/opt/mssql/ms-key.cer && \
@@ -16,6 +16,10 @@ RUN apt-get update && \
 # Cleanup - remove the links to Microsoft packages that we added earlier
     apt-get clean && \
     rm -rf /var/lib/apt/lists
+
+COPY cleanup_backups.sh /root/cleanup_backups.sh
+COPY backups-cron /etc/cron.d/backups-cron
+RUN chmod 644 /etc/cron.d/backups-cron && crontab /etc/cron.d/backups-cron
 
 # Run SQL Server process
 ENTRYPOINT [ "/opt/mssql/bin/sqlservr" ]

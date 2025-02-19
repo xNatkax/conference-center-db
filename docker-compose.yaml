@@ -12,10 +12,12 @@ services:
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
-      - /Users/natka/Documents/BAK:/var/opt/mssql/backup
+      - /Users/natka/Documents/BAK:/var/opt/mssql/backups
+    post_start:
+      - command: service cron start
+        user: root
     restart: always
 
 volumes:
   sqlserver-data:
     driver: local
-
