@@ -1,5 +1,10 @@
-/* sample queries, stored procedures, triggers
-   to demonstrate how the database works */
+/*
+    Database Demonstration Script
+    ----------------------------------------
+    This script contains sample queries, stored procedures, and triggers 
+    to demonstrate the functionality of the database.
+*/
+
 
 USE ConferenceCenterDB;
 GO
