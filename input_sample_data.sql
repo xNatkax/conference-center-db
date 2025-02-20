@@ -1,9 +1,13 @@
--- fill database with sample entries
+/*
+    Database Seeding Script
+    ----------------------------------------
+    This script populates the database with sample data for testing and development purposes.
+*/
 
 USE ConferenceCenterDB;
 GO
 
--- Table Reservations.Customers
+-- Table `Reservations.Customers`
 INSERT INTO Reservations.Customers (CompanyName, TIN, RegistrationDate, ContactDetails, AdditionalInfo)
 VALUES 
 (
@@ -578,7 +582,7 @@ VALUES
 );
 
 
--- Table Reservations.Services
+-- Table `Reservations.Services`
 INSERT INTO Reservations.Services (ServiceType, ServiceName, RoomCapacity, Equipment, Description, Price)
 VALUES
 ('conference room', 'Crystal Hall', 50, 'Projector, Audio/Video System, Whiteboards, Conference Phone', 'Modern conference room with panoramic windows and natural light. Ideal for small meetings or workshops.', 250.00),
@@ -595,7 +599,7 @@ VALUES
 ('catering portion', 'Basic Buffet', NULL, NULL, 'We offer water (carbonated and non-carbonated), juices (orange, apple) and coca cola. ', 50.00);
 
 
--- Table Reservations.Reservations
+-- Table `Reservations.Reservations`
 INSERT INTO Reservations.Reservations (ReservationDate, ReservationDetails, TotalPrice, Discount)
 VALUES 
 (
@@ -940,7 +944,7 @@ VALUES
 );
 
 
--- Table Reservations.booked
+-- Table `Reservations.booked`
 INSERT INTO Reservations.booked (EventDate, $from_id, $to_id)
 VALUES
 ('2025-02-01', (SELECT $node_id FROM Reservations.Customers WHERE CustomerID = 1), (SELECT $node_id FROM Reservations.Reservations WHERE ReservationID = 1)),
@@ -962,7 +966,7 @@ VALUES
 ('2025-02-01', (SELECT $node_id FROM Reservations.Customers WHERE CustomerID = 17), (SELECT $node_id FROM Reservations.Reservations WHERE ReservationID = 17));
 
 
--- Table includes
+-- Table `Reservations.includes`
 INSERT INTO Reservations.includes ($from_id, $to_id, Quantity)
 VALUES
 -- Reservation 1
@@ -1034,24 +1038,32 @@ VALUES
 ((SELECT $node_id FROM Reservations.Reservations WHERE ReservationID = 17), (SELECT $node_id FROM Reservations.Services WHERE ServiceName = 'Espresso Delight'), 95);
 
 
--- Table Inventory.Inventory
-INSERT INTO Inventory.Inventory (MaterialName, CurrentStock, MinimumLevel, Unit, ConversionFactor)
+-- Table `Inventory.Inventory`
+INSERT INTO Inventory.Inventory (MaterialName, CurrentStock, MinimumLevel, Unit, ConversionFactor, SuggestedOrderQuantity)
 VALUES
-('Coffee', 30, 2, 'kg', 50),               -- 1 kg = 50 porcji eventowych (200 ml = 20 g)
-('Tea', 20, 5, 'pack', 10),                -- 1 paczka = 10 porcji eventowych (1 saszetka na osobę)
-('Cookies', 50, 10, 'pack', 4),            -- 1 paczka = 4 porcje eventowe (5 ciastek/osoba, 20 w paczce)
-('Coca-Cola', 100, 40, 'bottle', 1),       -- 1 butelka = 1 porcja eventowa
-('Still Water', 200, 80, 'bottle', 1),     -- 1 butelka = 1 porcja eventowa
-('Sparkling Water', 200, 80, 'bottle', 1), -- 1 butelka = 1 porcja eventowa
-('Orange Juice', 80, 50, 'bottle', 1),     -- 1 butelka = 1 porcja eventowa
-('Apple Juice', 100, 10, 'bottle', 1),     -- 1 butelka = 1 porcja eventowa
-('Whiteboard Paper', 5, 3, 'pack', 30),    -- 1 paczka = 30 arkuszy, zużywane w sztukach
-('Whiteboard Marker', 6, 5, 'pack', 5),    -- 1 paczka = 5 markerów, zużywane w sztukach
-('Drink Cup', 100, 20, 'pack', 50),        -- 1 paczka = 50 sztuk, zużywane po 1 na osobę
-('Disposable Plate', 100, 20, 'pack', 50); -- 1 paczka = 50 sztuk, zużywane po 1 na osobę
+('Coffee', 30.00, 2, 'kg', 50, 10),                -- 1 kg = 50 event portions (200 ml = 20 g)
+('Tea', 20.00, 5, 'pack', 10, 30),                 -- 1 pack = 10 event portions
+('Cookies', 50.00, 10, 'pack', 4, 50),             -- 1 pack = 4 event portions
+('Coca-Cola', 100.00, 40, 'bottle', 1, 300),       -- 1 bottle = 1 event portion
+('Still Water', 200.00, 80, 'bottle', 1, 500),     -- 1 bottle = 1 event portion
+('Sparkling Water', 200.00, 80, 'bottle', 1, 500), -- 1 bottle = 1 event portion
+('Orange Juice', 80.00, 50, 'bottle', 1, 300),     -- 1 bottle = 1 event portion
+('Apple Juice', 100.00, 10, 'bottle', 1, 300),     -- 1 bottle = 1 event portion
+('Whiteboard Paper', 5.00, 3, 'pack', 30, 10),     -- 1 pack = 30 sheets, used in pieces
+('Whiteboard Marker', 6.00, 5, 'pack', 5, 10),     -- 1 pack = 5 markers, used in pieces
+('Drink Cup', 100.00, 20, 'pack', 50, 5),          -- 1 pack = 50 pieces, consumed 1 per person
+('Disposable Plate', 100.00, 20, 'pack', 50, 5);   -- 1 pack = 50 pieces, consumed 1 per person
 
 
--- Table Events.CompletedEvents
+-- Table `Inventory.LowStockRecords`
+INSERT INTO Inventory.LowStockRecords (MaterialID, MaterialName, DetectedDate, IsProcessed)
+VALUES
+    (1, 'Coffee', '2025-02-19 11:00:00', 0),
+    (4, 'Coca-Cola', '2025-02-19 10:30:00', 1),
+    (7, 'Orange Juice', '2025-02-19 9:45:00', 0);
+
+
+-- Table `Events.CompletedEvents`
 INSERT INTO Events.CompletedEvents (ReservationID, EventDate, Description)
 VALUES 
 (1, '2025-02-01 10:00:00', '50 participants, 50 coffee servings, 0 basic servings'),
@@ -1066,7 +1078,7 @@ VALUES
 (17, '2025-02-07 17:30:00', '95 participants, 95 coffee servings, 0 basic servings');
 
 
--- Table Feedback.Reviews
+-- Table `Feedback.Reviews`
 INSERT INTO Feedback.Reviews (CustomerID, EventID, Review, Comment)
 VALUES 
     (1, 1, 5, 'Everything was perfect! Great service, delicious coffee, and well-organized event.'),
@@ -1081,8 +1093,8 @@ VALUES
     (17, 10, 1, 'Worst event I have attended. Poor service and very disorganized.');
 
 
--- Table Events.EventMaterials
-INSERT INTO Events.EventMaterials (EventID, MaterialID, UsedQuantity)
+-- Table `Events.EventMaterials`
+INSERT INTO Events.EventMaterials
 VALUES 
     -- Event 1:
     (1, 1, 50), (1, 2, 50), (1, 3, 50), (1, 4, 50), (1, 5, 50), 
@@ -1135,7 +1147,7 @@ VALUES
     (10, 9, 1), (10, 10, 4);
 
 
--- Table Orders.Orders
+-- Table `Orders.Orders`
 INSERT INTO Orders.Orders (OrderDate, OrderStatus) 
 VALUES
 ('2025-01-14 12:31:33', 'Completed'),
@@ -1150,55 +1162,55 @@ VALUES
 ('2025-01-14 12:31:33', 'New');
 
 
--- Table Orders.OrdersDetails
-INSERT INTO Orders.OrdersDetails (OrderID, MaterialID, Quantity) 
+-- Table `Orders.OrderDetails`
+INSERT INTO Orders.OrderDetails (OrderID, MaterialID, MaterialName, Quantity) 
 VALUES
     -- Order 1:
-    (1, 6, 5),
-    (1, 3, 5),
-    (1, 12, 2),
+    (1, 6, 'Sparkling Water', 5),
+    (1, 3, 'Cookies', 5),
+    (1, 12, 'Disposable Plate', 2),
 
     -- Order 2:
-    (2, 4, 4),
-    (2, 5, 1),
-    (2, 10, 5),
+    (2, 4, 'Coca-Cola', 4),
+    (2, 5, 'Still Water', 1),
+    (2, 10, 'Whiteboard Marker', 5),
 
     -- Order 3:
-    (3, 6, 3),
-    (3, 10, 1),
-    (3, 1, 2),
+    (3, 6, 'Sparkling Water', 3),
+    (3, 10, 'Whiteboard Marker', 1),
+    (3, 1, 'Coffee', 2),
 
     -- Order 4:
-    (4, 3, 3),
-    (4, 4, 5),
-    (4, 7, 5),
+    (4, 3, 'Cookies', 3),
+    (4, 4, 'Coca-Cola', 5),
+    (4, 7, 'Orange Juice', 5),
 
     -- Order 5:
-    (5, 8, 2),
-    (5, 12, 2),
-    (5, 1, 5),
+    (5, 8, 'Apple Juice', 2),
+    (5, 12, 'Disposable Plate', 2),
+    (5, 1, 'Coffee', 5),
 
     -- Order 6:
-    (6, 4, 5),
-    (6, 7, 2),
-    (6, 8, 1),
+    (6, 4, 'Coca-Cola', 5),
+    (6, 7, 'Orange Juice', 2),
+    (6, 8, 'Apple Juice', 1),
 
     -- Order 7:
-    (7, 11, 4),
-    (7, 6, 2),
-    (7, 5, 1),
+    (7, 11, 'Drink Cup', 4),
+    (7, 6, 'Sparkling Water', 2),
+    (7, 5, 'Still Water', 1),
 
     -- Order 8:
-    (8, 5, 1),
-    (8, 3, 3),
-    (8, 1, 4),
+    (8, 5, 'Still Water', 1),
+    (8, 3, 'Cookies', 3),
+    (8, 1, 'Coffee', 4),
 
     -- Order 9:
-    (9, 8, 1),
-    (9, 3, 2),
-    (9, 1, 5),
+    (9, 8, 'Apple Juice', 1),
+    (9, 3, 'Cookies', 2),
+    (9, 1, 'Coffee', 5),
 
     -- Order 10:
-    (10, 6, 3),
-    (10, 9, 1),
-    (10, 2, 3);
+    (10, 6, 'Sparkling Water', 3),
+    (10, 9, 'Whiteboard Paper', 1),
+    (10, 2, 'Tea', 3);
