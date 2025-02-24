@@ -471,6 +471,7 @@ SELECT CompanyName,
        CAST(DECRYPTBYKEY(CompanyNameEnc, 0) AS VARCHAR(50)) 
 FROM Reservations.Customers;
 
+CLOSE SYMMETRIC KEY CustomerDataKey;
 
 /* Audits
     data necessary for protection: data from the Reservations.Customers table 
