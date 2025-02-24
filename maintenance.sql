@@ -2,19 +2,27 @@ USE ConferenceCenterDB;
 GO
 
 /*
-Disaster recovery
+    Disaster Recovery Plan
+    ------------------------
 
-RPO: 1h
-RTO: 3h
+    Recovery Objectives:
+    - RPO (Recovery Point Objective): 1 hour   
+    - RTO (Recovery Time Objective): 3 hours
 
-The database is mixed (contains transactional (OLTP) and analytical (OLAP) elements.)
+    Database Characteristics:
+    - The database operates in a mixed mode, containing both transactional (OLTP) 
+      and analytical (OLAP) elements.
+    - Critical data includes:
+      - Information about new bookings
+      - New orders for materials used during events
+      - Updates on completed events
 
-FULL copy every 24h / LOG copy every day after loading data - loaded data is valid
-(information about new bookings, new orders for materials used during events, 
-    updates on events that have already taken place)
+    Backup Strategy:
+    - Full Backup: Every 24 hours
+    - Transaction Log Backup: Performed daily after loading data
 */
 
--- base recovery model - FULL
+-- Base Recovery Model - FULL
 SELECT database_id,
        name,
        recovery_model,
@@ -22,7 +30,7 @@ SELECT database_id,
 FROM sys.databases
 WHERE name = 'ConferenceCenterDB';
 
--- full backup (every day)
+-- Full Backup (every day)
 DECLARE @FullBackupFileName NVARCHAR(100);
 SET @FullBackupFileName = N'/var/opt/mssql/backups/ConferenceCenterDB_Full_' + FORMAT(GETDATE(), 'yyyyMMdd_HHmm') + N'.bak';
 
@@ -31,7 +39,7 @@ BACKUP DATABASE ConferenceCenterDB
     WITH NAME = 'Full Backup of ConferenceCenterDB', CHECKSUM;
 GO
 
--- transaction log backup (every day after loading data)
+-- Transaction Log Backup (every day after loading data)
 DECLARE @LogBackupFileName NVARCHAR(100);
 SET @LogBackupFileName = N'/var/opt/mssql/backups/ConferenceCenterDB_Log_' + FORMAT(GETDATE(), 'yyyyMMdd_HHmm') + N'.bak';
 
@@ -40,20 +48,22 @@ BACKUP LOG ConferenceCenterDB
     WITH NAME = 'Transaction Log Backup of ConferenceCenterDB';
 GO
 
--- backup file structure
+-- Backup file structure
 EXEC xp_dirtree '/var/opt/mssql/backups', 1, 1;
 
--- restore database
+-- Restore database
 RESTORE DATABASE ConferenceCenterDB FROM DISK = '/var/opt/mssql/backups/ConferenceCenterDB_Full_20250217_0937.bak'
 WITH MOVE 'ConferenceCenterDB' TO '/var/opt/mssql/data/CCDB.mdf',
      MOVE 'ConferenceCenterDB_log' TO '/var/opt/mssql/data/CCDB_log.ldf';
 
 
--- User Agent Jobs
+------------------------------------------------------------------------------------
+--                           SQL Agent Jobs                                       --
+------------------------------------------------------------------------------------
 USE msdb;
 GO
 
--- Full Backup Agent Job
+-- Full Backup SQL Agent Job
 EXEC dbo.sp_add_job 
     @job_name = N'Daily Full ConferenceCenterDB Backup';
 GO
@@ -90,8 +100,32 @@ GO
 EXEC dbo.sp_add_jobserver @job_name = N'Daily Full ConferenceCenterDB Backup';
 GO
 
--- Log Backup Agent Job
--- procedure to generate triggers for each table in the schema
+
+-- Log Backup SQL Agent Job
+USE ConferenceCenterDB;
+GO
+
+/*
+    Stored Procedure: usp_GenerateTriggersForSchema
+    ----------------------------------------
+    This procedure dynamically creates or replaces triggers for all tables within a specified schema. 
+    Each generated trigger ensures that after any `INSERT`, `UPDATE`, or `DELETE` operation, 
+    a SQL Server Agent job is triggered to perform a transaction log backup.
+
+    Parameters:
+    - @SchemaName (NVARCHAR(128), REQUIRED): The name of the schema for which triggers should be generated.
+
+    Functionality:
+    - Iterates through all tables in the specified schema.
+    - If a trigger named `trg_BackupLog_{TableName}` already exists, it is dropped.
+    - Creates a new trigger for each table in the schema to execute the transaction log backup job 
+      `Transaction Log ConferenceCenterDB Backup` after `INSERT`, `UPDATE`, or `DELETE` operations.
+
+    Usage:
+    EXEC usp_GenerateTriggersForSchema 
+        @SchemaName = 'Inventory';
+*/
+
 CREATE OR ALTER PROCEDURE usp_GenerateTriggersForSchema
     @SchemaName NVARCHAR(128)
 AS
@@ -145,7 +179,6 @@ EXEC usp_GenerateTriggersForSchema 'Orders';
 EXEC usp_GenerateTriggersForSchema 'Inventory';
 EXEC usp_GenerateTriggersForSchema 'Reservations';
 
-
 USE msdb;
 GO
 
@@ -171,6 +204,12 @@ GO
 EXEC dbo.sp_add_jobserver @job_name = N'Transaction Log ConferenceCenterDB Backup';
 GO
 
+------------------------------------------------------------------------------------
+--                                                                                --
+------------------------------------------------------------------------------------
+
+
+
 
 ------------------------------------------------------------------------------------
 --                                Tests                                           --
@@ -178,12 +217,12 @@ GO
 USE ConferenceCenterDB;
 GO
 
--- trigger list
+-- Trigger list
 SELECT name FROM sys.triggers WHERE name LIKE 'trg_BackupLog_%';
 
-/* add a new record
-    after adding a new record we should see the message
-    'Job 'Transaction Log ConferenceCenterDB Backup' started successfully.' */
+/* Add a new record
+   after adding a new record we should see the message
+   'Job 'Transaction Log ConferenceCenterDB Backup' started successfully.' */
 
 INSERT INTO Reservations.Reservations (ReservationDate, ReservationDetails, TotalPrice, Discount)
 VALUES 
@@ -209,10 +248,10 @@ VALUES
 );
 GO
 
--- check if the job has been started
+-- Check if the job has been started
 EXEC msdb.dbo.sp_help_job @job_name = N'Transaction Log ConferenceCenterDB Backup';
 
--- check if the backup file exists
+-- Check if the backup file exists
 EXEC xp_dirtree '/var/opt/mssql/backups', 1, 1;
 
 
@@ -221,11 +260,11 @@ EXEC xp_dirtree '/var/opt/mssql/backups', 1, 1;
 ------------------------------------------------------------------------------------
 
 
--- database maintenance
+-- Database maintenance
 DBCC CHECKDB('ConferenceCenterDB') WITH NO_INFOMSGS;
 GO
 
--- emergency mode and database repair
+-- Emergency mode and database repair
 ALTER DATABASE ConferenceCenterDB SET Emergency WITH ROLLBACK IMMEDIATE;
 ALTER DATABASE ConferenceCenterDB SET SINGLE_USER;
 DBCC CHECKDB('ConferenceCenterDB', REPAIR_REBUILD);
@@ -234,7 +273,10 @@ ALTER DATABASE ConferenceCenterDB SET MULTI_USER;
 ALTER DATABASE ConferenceCenterDB SET ONLINE;
 
 
--- Agent Job for Maintenance
+------------------------------------------------------------------------------------
+--                           SQL Agent Job                                        --
+------------------------------------------------------------------------------------
+
 USE msdb;
 GO
 
@@ -363,6 +405,71 @@ GO
 EXEC dbo.sp_add_jobserver @job_name = N'MaintenancePlan_ConferenceCenterDB';
 GO
 
+------------------------------------------------------------------------------------
+--                                                                                --
+------------------------------------------------------------------------------------
+
+/* Encryption of the `Reservations.Customers` table */
+
+-- Re-generation and backup of the Service Master Key
+ALTER SERVICE MASTER KEY REGENERATE;
+GO
+
+BACKUP SERVICE MASTER KEY
+TO FILE = '/tmp/service_master_key_2022'
+ENCRYPTION BY PASSWORD = 'Pa$$w0rd';
+
+RESTORE SERVICE MASTER KEY
+FROM FILE = '/tmp/service_master_key_2022'
+DECRYPTION BY PASSWORD = 'Pa$$w0rd';
+
+-- ConferenceCenterDB Master Key creation
+USE ConferenceCenterDB;
+GO
+
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Pa$$w0rd';
+
+BACKUP MASTER KEY
+TO FILE = '/tmp/CCDB_master_key_2022'
+ENCRYPTION BY PASSWORD = 'Pa$$w0rd';
+
+RESTORE MASTER KEY
+FROM FILE = '/tmp/CCDB_master_key_2022'
+DECRYPTION BY PASSWORD = 'Pa$$w0rd'
+ENCRYPTION BY PASSWORD = 'Pa$$w0rd';
+
+-- Encryption of data using certificate and symmetric key
+-- Columns for encrypted content
+ALTER TABLE Reservations.Customers
+ADD CompanyNameEnc VARBINARY(MAX),
+    TINEnc VARBINARY(MAX);
+
+CREATE CERTIFICATE CustomerDataCert
+WITH SUBJECT = 'Customer Data Encryption';
+GO
+
+CREATE SYMMETRIC KEY CustomerDataKey
+WITH ALGORITHM = AES_256
+ENCRYPTION BY CERTIFICATE CustomerDataCert;
+
+OPEN SYMMETRIC KEY CustomerDataKey
+DECRYPTION BY CERTIFICATE CustomerDataCert;
+
+UPDATE Reservations.Customers
+SET CompanyNameEnc = ENCRYPTBYKEY(KEY_GUID('CustomerDataKey'), CompanyName),
+    TINEnc = ENCRYPTBYKEY(KEY_GUID('CustomerDataKey'), TIN);
+
+CLOSE SYMMETRIC KEY CustomerDataKey;
+
+-- Data decryption
+OPEN SYMMETRIC KEY CustomerDataKey
+DECRYPTION BY CERTIFICATE CustomerDataCert;
+
+SELECT CompanyName, 
+       CompanyNameEnc,
+       DECRYPTBYKEY(CompanyNameEnc, 0), 
+       CAST(DECRYPTBYKEY(CompanyNameEnc, 0) AS VARCHAR(50)) 
+FROM Reservations.Customers;
 
 
 /* Audits
@@ -384,12 +491,12 @@ ALTER SERVER AUDIT ConferenceCenter_Change WITH (STATE = ON);
 USE ConferenceCenterDB;
 GO
 
--- audit specification
+-- Audit specification
 CREATE DATABASE AUDIT SPECIFICATION CCAudit_CustomersAccess
 FOR SERVER AUDIT ConferenceCenter_Change
 ADD (SELECT, INSERT, UPDATE, DELETE ON Reservations.Customers BY PUBLIC);
 
--- inclusion of specification
+-- Inclusion of specification
 ALTER DATABASE AUDIT SPECIFICATION CCAudit_CustomersAccess
 WITH (STATE = ON);
 
@@ -431,7 +538,7 @@ VALUES
 DELETE Reservations.Customers
 WHERE CustomerID = 31;
 
--- check the log table
+-- Check the log table
 SELECT * FROM sys.fn_get_audit_file ('/tmp/AuditLogs/*', DEFAULT, DEFAULT);
 
 ------------------------------------------------------------------------------------
